@@ -523,40 +523,30 @@ window.Folder = function(name, list, timestamp, isSearchResultFolder){
 	};
 	
 	this.getUniqueSnippetAtCaretPos = function (node, pos){
-		var val = getText(node), snip,
-			// first get the 30 characters behind caret
-			// and then go through them sequentially building up a string
-			// and find it it matches any snip
-			// (extra minus 1 for delimiter char)
-			completeString = val.slice(pos - OBJECT_NAME_LIMIT - 1, pos),
-			len = completeString.length, i = 1,
-			lim = OBJECT_NAME_LIMIT,
-			// the space character some distance behind the caret
-			// which separates snip_name from rest of the text
-			delimiterChar;
+		var val = getText(node), snip, stringToCheck = "",
+			foundSnip = null, delimiterChar = val[pos - 1],
+			lim = pos < OBJECT_NAME_LIMIT ? pos : OBJECT_NAME_LIMIT;
 		
-		// the text before the caret has less than 31 characters
-		if(len !== OBJECT_NAME_LIMIT + 1) {
-			i = 0; lim = len;
-		}		
-		
-		for(; i < lim; i++){
-			checkedString = completeString.slice(i);
-			delimiterChar = completeString[i - 1];
+		for(var i = 1; i <= lim; i++){
+			// the previous delimiter char gets added to the
+			// string to check as we move towards left			
+			stringToCheck += delimiterChar;
+			delimiterChar = val[pos - 1 - i];
 			
-			if((snip = this.getUniqueSnip(checkedString))){
+			if((snip = this.getUniqueSnip(stringToCheck))){
 				if(Data.matchWholeWord && window.snipNameDelimiterListRegex){
-					// delimiter char may not exist if snip name is at the beginning of the line
-					if(!delimiterChar || 
+					// delimiter char may not exist if snip name
+					// is at the beginning of the textbox
+					if(!delimiterChar ||
 						window.snipNameDelimiterListRegex.test(delimiterChar) ||
 						delimiterChar === "\n") // a new line character is always a delimiter
-						return snip;
+						foundSnip = snip;
 				}
-				else return snip;
+				else foundSnip = snip;
 			}
 		}
 
-		return null;
+		return foundSnip;
 	};
 	
 	this.createCtxMenuEntry = function(parentId){
